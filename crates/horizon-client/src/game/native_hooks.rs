@@ -5788,6 +5788,26 @@ impl Game<'_> {
             recipe,
         );
     }
+    /// A server player started spectating `entity_id` of type `kind`
+    /// (`minecraft:zombie`), after their camera was set to it
+    /// (`ServerPlayer.setCamera`). Guest lookup helpers may find nothing.
+    /// @API:player_start_spectating_entity@.
+    pub(super) fn native_player_start_spectating_entity(
+        &mut self,
+        player: u128,
+        name: &str,
+        entity_id: i32,
+        kind: &str,
+    ) {
+        mod_api::dispatch_player_start_spectating_entity(
+            self,
+            mod_api::mods(),
+            player,
+            name,
+            entity_id,
+            kind,
+        );
+    }
     /// A server player stopped spectating `entity_id`, after their camera
     /// returned to the player. Guest lookup helpers may find nothing.
     /// 279.

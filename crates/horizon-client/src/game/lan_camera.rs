@@ -200,11 +200,41 @@ impl Game<'_> {
         if let Some(c) = self.cmds.guest_cameras.get_mut(&conn) {
             c.teleports = teleports;
         }
-        if camera.is_none()
-            && let Some(entity_id) = previous
-        {
-            self.native_player_stop_spectating_entity(uuid, &name, entity_id);
+        match camera {
+            Some(entity_id) => {
+                let kind = self.camera_kind(host, entity_id);
+                self.native_player_start_spectating_entity(uuid, &name, entity_id, &kind);
+            }
+            None => {
+                if let Some(entity_id) = previous {
+                    self.native_player_stop_spectating_entity(uuid, &name, entity_id);
+                }
+            }
         }
+    }
+
+    /// The type (`Entity.getType`) of the camera entity with that id: a
+    /// player, the extra targets `camera_extra` finds (an `EnderDragonPart`
+    /// has its dragon's type), or a level entity.
+    fn camera_kind(&self, host: &LanHost, id: i32) -> String {
+        if host.hub.guests.iter().any(|g| g.entity_id == id) {
+            return "minecraft:player".into();
+        }
+        let extra = u32::try_from(id).ok().filter(|&id| id != 0);
+        if let Some(id) = extra {
+            if self.tnts.iter().any(|t| t.id == id) {
+                return "minecraft:tnt".into();
+            }
+            if self.falling.iter().any(|f| f.id == id) {
+                return "minecraft:falling_block".into();
+            }
+            if self.dragon_part(id).is_some() {
+                return "minecraft:ender_dragon".into();
+            }
+        }
+        self.level_entity(id)
+            .map(|t| self.target_type(t))
+            .unwrap_or_default()
     }
 
     /// The camera part of `ServerPlayer.tick` for every guest, after the
